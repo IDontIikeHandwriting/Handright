@@ -1,7 +1,10 @@
 # coding: utf-8
 import copy
+from typing import *
 
-from handright._util import *
+import PIL.Image
+
+from handright._util import count_bands
 
 
 class Template(object):
@@ -24,6 +27,7 @@ class Template(object):
         "_perturb_x_sigma",
         "_perturb_y_sigma",
         "_perturb_theta_sigma",
+        "_ext"
     )
 
     _DEFAULT_WORD_SPACING = 0
@@ -36,6 +40,8 @@ class Template(object):
     _DEFAULT_END_CHARS = "，。》？；：’”】｝、！％）,.>?;:]}!%)′″℃℉"
 
     _DEFAULT_PERTURB_THETA_SIGMA = 0.07
+
+    _DEFAULT_EXT = dict()
 
     def __init__(
             self,
@@ -56,6 +62,7 @@ class Template(object):
             perturb_x_sigma: Optional[float] = None,
             perturb_y_sigma: Optional[float] = None,
             perturb_theta_sigma: float = _DEFAULT_PERTURB_THETA_SIGMA,
+            ext: Optional[Dict[str, Any]] = None,
     ):
         """Note that, all the Integer parameters are in pixels.
 
@@ -83,6 +90,8 @@ class Template(object):
         `perturb_x_sigma`, `perturb_y_sigma` and `perturb_theta_sigma` are the
         sigmas of the gauss distributions of the horizontal position, the
         vertical position and the rotation of strokes, respectively.
+
+        `ext`: TODO
         """
         self.set_background(background)
         self.set_font_size(font_size)
@@ -101,6 +110,7 @@ class Template(object):
         self.set_perturb_x_sigma(perturb_x_sigma)
         self.set_perturb_y_sigma(perturb_y_sigma)
         self.set_perturb_theta_sigma(perturb_theta_sigma)
+        self.set_ext(ext)
 
     def __eq__(self, other) -> bool:
         return (isinstance(other, Template)
@@ -216,6 +226,9 @@ class Template(object):
     ) -> None:
         self._perturb_theta_sigma = perturb_theta_sigma
 
+    def set_ext(self, ext: Optional[Dict[str, Any]] = None):
+        self._ext = ext or Template._DEFAULT_EXT
+
     def get_background(self) -> PIL.Image.Image:
         return self._background
 
@@ -269,6 +282,9 @@ class Template(object):
 
     def get_size(self) -> Tuple[int, int]:
         return self.get_background().size
+
+    def get_ext(self) -> Dict[str, Any]:
+        return self._ext
 
     def release_font_resource(self) -> None:
         """This method should be called before pickling corresponding instances.

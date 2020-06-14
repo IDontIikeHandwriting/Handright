@@ -1,12 +1,15 @@
 # coding: utf-8
 import itertools
 import random
+from typing import *
 
+import PIL.Image
 import math
 
-from handright._exceptions import *
-from handright._template import *
-from handright._util import *
+from handright._exceptions import BackgroundTooLargeError, LayoutError
+from handright._font_pool import FontPool
+from handright._template import Template, copy_templates
+from handright._util import Page, NumericOrderedSet
 
 # While changing following constants, it is necessary to consider to rewrite the
 # relevant codes.
@@ -56,16 +59,18 @@ def handwrite(
     return mapper(renderer, pages)
 
 
-def _draft(text, templates, seed=None) -> Iterator[Page]:
+def _draft(
+        text: str, templates: Sequence[Template], seed=None
+) -> Iterator[Page]:
     text = _preprocess_text(text)
-    template_iter = itertools.cycle(templates)
+    template_iter = itertools.cycle(zip(templates, map(FontPool, templates)))
     num_iter = itertools.count()
     rand = random.Random(x=seed)
     start = 0
     while start < len(text):
-        template = next(template_iter)
+        template, font_pool = next(template_iter)
         page = Page(_INTERNAL_MODE, template.get_size(), _BLACK, next(num_iter))
-        start = _draw_page(page, text, start, template, rand)
+        start = _draw_page(page, text, start, template, font_pool, rand)
         yield page
 
 
@@ -73,7 +78,7 @@ def _preprocess_text(text: str) -> str:
     return text.replace(_CRLF, _LF).replace(_CR, _LF)
 
 
-def _check_template(page, template) -> None:
+def _check_template(page: Page, template: Template) -> None:
     if page.height() < (template.get_top_margin() + template.get_line_spacing()
                         + template.get_bottom_margin()):
         msg = "for (height < top_margin + line_spacing + bottom_margin)"
@@ -90,13 +95,19 @@ def _check_template(page, template) -> None:
         raise LayoutError(msg)
 
 
-def _draw_page(page, text, start: int, template, rand: random.Random) -> int:
+def _draw_page(
+        page: Page,
+        text: str,
+        start: int,
+        template: Template,
+        font_pool: FontPool,
+        rand: random.Random,
+) -> int:
     _check_template(page, template)
 
     width = page.width()
     height = page.height()
 
-    font = template.get_font()
     top_margin = template.get_top_margin()
     bottom_margin = template.get_bottom_margin()
     left_margin = template.get_left_margin()
@@ -123,11 +134,9 @@ def _draw_page(page, text, start: int, template, rand: random.Random) -> int:
                     and text[start] not in end_chars):
                 break
             xy = (round(x), round(rand.gauss(y, line_spacing_sigma)))
-            actual_font_size = max(
-                round(rand.gauss(font_size, font_size_sigma)), 0
+            font = font_pool.get_font(
+                max(round(rand.gauss(font_size, font_size_sigma)), 0)
             )
-            if actual_font_size != font.size:
-                font = font.font_variant(size=actual_font_size)
             offset = _draw_char(draw, text[start], xy, font)
             x += rand.gauss(word_spacing + offset, word_spacing_sigma)
             start += 1
