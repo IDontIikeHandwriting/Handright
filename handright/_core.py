@@ -63,12 +63,12 @@ def _draft(
         text: str, templates: Sequence[Template], seed=None
 ) -> Iterator[Page]:
     text = _preprocess_text(text)
-    template_iter = itertools.cycle(zip(templates, map(FontPool, templates)))
+    iter = itertools.cycle((t, FontPool(t)) for t in templates)
     num_iter = itertools.count()
     rand = random.Random(x=seed)
     start = 0
     while start < len(text):
-        template, font_pool = next(template_iter)
+        template, font_pool = next(iter)
         page = Page(_INTERNAL_MODE, template.get_size(), _BLACK, next(num_iter))
         start = _draw_page(page, text, start, template, font_pool, rand)
         yield page
