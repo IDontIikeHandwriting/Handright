@@ -49,6 +49,11 @@ for im in images:
 更多信息请参阅[Tutorial][tutorial]。
 
 
+## More
+欢迎扫码或点击[链接](https://t.zsxq.com/zzZfMJq)加入知识星球。您可以在那里寻求帮助、分享心得、反馈意见、结交“道友”……
+![](https://github.com/Gsllchb/Handright/blob/master/docs/images/zsxq.png)
+
+
 [tutorial]: https://github.com/Gsllchb/Handright/blob/master/docs/tutorial.md
 [PIL]: http://www.pythonware.com/products/pil/
 [Pillow]: http://python-pillow.org/
